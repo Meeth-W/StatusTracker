@@ -1,0 +1,7 @@
+# Bot Settings #
+prefix: "!"
+owner_id: 980776574519492618
+status: [
+  "Tracking!",
+  "Spying!"
+]
