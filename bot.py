@@ -2,12 +2,15 @@ import os
 import random
 import logging
 import platform
+import aiosqlite
 
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Context
 
 from dotenv import load_dotenv
+
+from database import Database
 
 # Loading Configs
 from functions import ConfigManager
@@ -77,6 +80,16 @@ class Tracker(commands.Bot):
         self.logger = logger
         self.database = None
     
+    async def init_db(self) -> None:
+        async with aiosqlite.connect(
+            f"{os.path.realpath(os.path.dirname(__file__))}/database/database.db"
+        ) as db:
+            with open(
+                f"{os.path.realpath(os.path.dirname(__file__))}/database/schema.sql"
+            ) as file:
+                await db.executescript(file.read())
+            await db.commit()
+    
     async def load_cogs(self) -> None:
         """
         Load bots modules
@@ -111,8 +124,14 @@ class Tracker(commands.Bot):
             f"Running on: {platform.system()} {platform.release()} ({os.name})"
         )
         self.logger.info("-------------------")
+        await self.init_db()
         await self.load_cogs()
         self.status_task.start()
+        self.database = Database(
+            connection = await aiosqlite.connect(
+                f"{os.path.realpath(os.path.dirname(__file__))}/database/database.db"
+            )
+        )
     
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user or message.author.bot:
